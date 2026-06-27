@@ -36,5 +36,6 @@
     "typescript": "latest",
     "vite": "latest",
     "vitest": "latest"
-  }
+  },
+  "version": "0.1.0"
 }
