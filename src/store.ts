@@ -289,7 +289,12 @@ export function renameItem(id: string, rawName: string): void {
 }
 
 export function deleteItem(id: string): void {
-  yItems.delete(id);
+  const name = yItems.get(id)?.get("name") as string | undefined;
+  ydoc.transact(() => {
+    yItems.delete(id);
+    // also forget any manual aisle correction learned for this name
+    if (name) yOverrides.delete(normalize(name));
+  });
   flush();
 }
 

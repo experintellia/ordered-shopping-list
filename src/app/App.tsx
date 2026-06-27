@@ -164,13 +164,13 @@ export function App() {
           <ListView
             groups={groups}
             showWho={showWho}
-            onLongPress={(id) => setOverlay({ kind: "item", id })}
+            onOpenMenu={(id) => setOverlay({ kind: "item", id })}
           />
         ) : (
           <BoardView
             groups={groups}
             showWho={showWho}
-            onLongPress={(id) => setOverlay({ kind: "item", id })}
+            onOpenMenu={(id) => setOverlay({ kind: "item", id })}
           />
         )}
       </main>

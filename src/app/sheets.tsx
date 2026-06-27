@@ -3,7 +3,6 @@ import {
   ReactNode,
   RefObject,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -31,7 +30,8 @@ import { ActionRow, DoneButton, Sheet, SheetTitle, useUI } from "./ui";
 export function ItemSheet(props: { id: string; onClose: () => void }) {
   const { t, label } = useUI();
   useStore();
-  const [moveOpen, setMoveOpen] = useState(false);
+  const [mode, setMode] = useState<"menu" | "move" | "rename">("menu");
+  const [draft, setDraft] = useState("");
   const item = itemsByAisle()
     .flatMap((g) => g.items)
     .find((i) => i.id === props.id);
@@ -41,21 +41,25 @@ export function ItemSheet(props: { id: string; onClose: () => void }) {
   }, [item, props]);
   if (!item) return null;
 
+  const save = () => {
+    if (draft.trim()) renameItem(item.id, draft);
+    props.onClose();
+  };
+
   return (
     <Sheet>
       <SheetTitle title={item.name} subtitle={label(item.category)} />
-      {!moveOpen ? (
+      {mode === "menu" ? (
         <>
           <ActionRow
             label={"↔︎ " + t("menu_move")}
-            onClick={() => setMoveOpen(true)}
+            onClick={() => setMode("move")}
           />
           <ActionRow
             label={"✏️ " + t("menu_rename")}
             onClick={() => {
-              const next = window.prompt(t("rename_prompt"), item.name);
-              if (next != null && next.trim()) renameItem(item.id, next);
-              props.onClose();
+              setDraft(item.name);
+              setMode("rename");
             }}
           />
           <ActionRow
@@ -67,6 +71,19 @@ export function ItemSheet(props: { id: string; onClose: () => void }) {
             }}
           />
         </>
+      ) : mode === "rename" ? (
+        <div className="add-group">
+          <input
+            autoFocus
+            value={draft}
+            placeholder={t("rename_prompt")}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") save();
+            }}
+          />
+          <button onClick={save}>{t("rename_save")}</button>
+        </div>
       ) : (
         <>
           <div className="section-label">{t("sheet_move_label")}</div>
@@ -368,39 +385,22 @@ function SwitchRow(props: {
 
 export function ExportSheet(props: { onClose: () => void }) {
   const { t } = useUI();
-  const json = useMemo(() => JSON.stringify(exportState(), null, 2), []);
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
+  const send = async () => {
+    const json = JSON.stringify(exportState(), null, 2);
     try {
-      await navigator.clipboard.writeText(json);
-      setCopied(true);
-    } catch {
-      /* clipboard may be unavailable; the textarea is still selectable */
+      await window.webxdc.sendToChat({
+        file: { name: "grocery-list.json", plainText: json },
+        text: t("export_chat_text"),
+      });
+    } catch (e) {
+      console.log(e); // user cancelled or runtime lacks sendToChat
     }
-  };
-  const download = () => {
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "grocery-list.json";
-    a.click();
-    URL.revokeObjectURL(url);
+    props.onClose();
   };
   return (
     <Sheet>
       <SheetTitle title={t("export_title")} subtitle={t("export_hint")} />
-      <textarea
-        className="data-area"
-        readOnly
-        value={json}
-        onFocus={(e) => e.currentTarget.select()}
-      />
-      <ActionRow
-        label={copied ? t("export_copied") : t("export_copy")}
-        onClick={copy}
-      />
-      <ActionRow label={t("export_download")} onClick={download} />
+      <ActionRow label={t("export_send")} onClick={send} />
       <DoneButton onClick={props.onClose} label={t("done")} />
     </Sheet>
   );
@@ -408,43 +408,25 @@ export function ExportSheet(props: { onClose: () => void }) {
 
 export function ImportSheet(props: { onClose: () => void }) {
   const { t } = useUI();
-  const [text, setText] = useState("");
   const [error, setError] = useState("");
-  const apply = () => {
+  const pick = async () => {
     try {
-      importState(JSON.parse(text));
+      const files = await window.webxdc.importFiles({
+        extensions: [".json"],
+        mimeTypes: ["application/json"],
+      });
+      if (!files.length) return;
+      importState(JSON.parse(await files[0].text()));
       props.onClose();
     } catch {
       setError(t("import_invalid"));
     }
   };
-  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => setText(String(reader.result || ""));
-    reader.readAsText(f);
-  };
   return (
     <Sheet>
       <SheetTitle title={t("import_title")} subtitle={t("import_hint")} />
-      <textarea
-        className="data-area"
-        value={text}
-        placeholder="{ … }"
-        onChange={(e) => {
-          setText(e.target.value);
-          setError("");
-        }}
-      />
-      <input
-        type="file"
-        accept="application/json,.json"
-        className="file-input"
-        onChange={onFile}
-      />
+      <ActionRow label={t("import_file")} onClick={pick} danger />
       {error ? <div className="import-error">{error}</div> : null}
-      <ActionRow label={t("import_apply")} onClick={apply} danger />
       <DoneButton onClick={props.onClose} label={t("done")} />
     </Sheet>
   );

@@ -138,12 +138,8 @@ describe("React app", () => {
       expect(store.customAisles()).toContain("Garage");
       clickText("Done");
 
-      // long-press the item (500ms) to open its menu, then go to the move list
-      const row = document.querySelector(".row")!;
-      fireEvent.pointerDown(row, { clientX: 0, clientY: 0 });
-      act(() => {
-        vi.advanceTimersByTime(520);
-      });
+      // open the item menu via its ⋮ button, then go to the move list
+      fireEvent.click(document.querySelector(".row .item-menu-btn")!);
       fireEvent.click(screen.getByText(/Move to aisle…/));
       // the custom group is offered as a destination
       const target = screen.getByText("Garage");

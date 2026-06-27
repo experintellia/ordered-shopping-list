@@ -43,6 +43,17 @@ describe("categorize (keyword matching)", () => {
   it("falls back to Other for unknown items", () => {
     expect(categorize("xyzzy widget", noOverrides)).toBe("Other");
   });
+  it("categorizes whole grains", () => {
+    expect(categorize("quinoa", noOverrides)).toBe("Pantry & Baking");
+    expect(categorize("millet", noOverrides)).toBe("Pantry & Baking");
+  });
+  it("longer keyword wins over a shorter substring of another category", () => {
+    // "pepperoni" must beat "pepper" (Produce); "hot chocolate" beats
+    // "chocolate" (Snacks); "cough syrup" beats "syrup" (Pantry)
+    expect(categorize("pepperoni", noOverrides)).toBe("Meat & Seafood");
+    expect(categorize("hot chocolate", noOverrides)).toBe("Beverages");
+    expect(categorize("cough syrup", noOverrides)).toBe("Personal Care");
+  });
 });
 
 describe("categorize (German language pack)", () => {
@@ -58,6 +69,21 @@ describe("categorize (German language pack)", () => {
   });
   it("falls back to Other for unknown German items", () => {
     expect(categorize("Quxbar", noOverrides, "de")).toBe("Other");
+  });
+  it("categorizes German whole grains (Hirse, Quinoa)", () => {
+    expect(categorize("Hirse", noOverrides, "de")).toBe("Pantry & Baking");
+    expect(categorize("Quinoa", noOverrides, "de")).toBe("Pantry & Baking");
+  });
+  it("German compound keywords beat a shorter cross-category substring", () => {
+    // "kokosmilch" must beat "milch" (Dairy); "kürbiskerne" beats "kürbis"
+    // (Produce); "ahornsirup" beats "sirup" (Beverages); "milchshake" → drink
+    expect(categorize("Kokosmilch", noOverrides, "de")).toBe("Pantry & Baking");
+    expect(categorize("Kürbiskerne", noOverrides, "de")).toBe("Pantry & Baking");
+    expect(categorize("Ahornsirup", noOverrides, "de")).toBe("Pantry & Baking");
+    expect(categorize("Erdnussbutter", noOverrides, "de")).toBe(
+      "Pantry & Baking",
+    );
+    expect(categorize("Milchshake", noOverrides, "de")).toBe("Beverages");
   });
   it("an override (shared, language-neutral key) still wins in German", () => {
     const overrides = new Map<string, string>([["vollmilch", "Beverages"]]);

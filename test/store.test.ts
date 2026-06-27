@@ -130,11 +130,12 @@ describe("import / export (feature D)", () => {
     const milk2 = store.allItems().find((i) => i.name === "Milk")!;
     expect(milk2.checked).toBe(true);
     expect(milk2.category).toBe("Garden");
-    // the restored override re-applies: delete Milk, re-add it → back in Garden
+    // deleting an item drops its override: re-adding falls back to the keyword
+    // aisle (Dairy & Eggs), not the previously-corrected Garden
     store.deleteItem(milk2.id);
     store.addItem("Milk");
     const reAdded = store.allItems().find((i) => i.name === "Milk")!;
-    expect(reAdded.category).toBe("Garden");
+    expect(reAdded.category).toBe("Dairy & Eggs");
   });
 
   it("rejects unrecognized import data", () => {

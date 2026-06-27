@@ -45,6 +45,7 @@ const en: UIStrings = {
     "Drag to reorder the store layout. Empty aisles are hidden in views.",
   done: "Done",
   rename_prompt: "Rename item",
+  rename_save: "Save",
   empty_suffix: "(empty)",
   settings_title: "Settings",
   settings_show_who: "Show who added items",
@@ -64,16 +65,14 @@ const en: UIStrings = {
   data_export: "Export list…",
   data_import: "Import list…",
   export_title: "Export list",
-  export_hint: "Copy this, or download it as a file.",
-  export_copy: "Copy to clipboard",
-  export_copied: "Copied!",
-  export_download: "Download .json",
+  export_hint: "Send your list as a file to another chat.",
+  export_send: "Send to chat",
+  export_chat_text: "Grocery list from Grocery Board",
   import_title: "Import list",
   import_hint:
-    "Paste exported data or choose a file. This replaces the current list for everyone.",
+    "Pick a grocery-list file to replace the current list for everyone.",
   import_file: "Choose file…",
-  import_apply: "Replace list",
-  import_invalid: "Could not read that data.",
+  import_invalid: "Could not read that file.",
 };
 
 // German UI strings. Filled from the de localization data; any missing key
@@ -97,6 +96,7 @@ const de: UIStrings = {
     "Ziehen, um die Reihenfolge zu ändern. Leere Gänge werden ausgeblendet.",
   done: "Fertig",
   rename_prompt: "Artikel umbenennen",
+  rename_save: "Speichern",
   empty_suffix: "(leer)",
   settings_title: "Einstellungen",
   settings_show_who: "Zeigen, wer hinzugefügt hat",
@@ -117,16 +117,14 @@ const de: UIStrings = {
   data_export: "Liste exportieren…",
   data_import: "Liste importieren…",
   export_title: "Liste exportieren",
-  export_hint: "Kopiere dies oder lade es als Datei herunter.",
-  export_copy: "In Zwischenablage kopieren",
-  export_copied: "Kopiert!",
-  export_download: ".json herunterladen",
+  export_hint: "Sende deine Liste als Datei an einen anderen Chat.",
+  export_send: "An Chat senden",
+  export_chat_text: "Einkaufsliste aus Grocery Board",
   import_title: "Liste importieren",
   import_hint:
-    "Exportierte Daten einfügen oder Datei wählen. Dies ersetzt die aktuelle Liste für alle.",
+    "Wähle eine Einkaufslisten-Datei, um die aktuelle Liste für alle zu ersetzen.",
   import_file: "Datei wählen…",
-  import_apply: "Liste ersetzen",
-  import_invalid: "Diese Daten konnten nicht gelesen werden.",
+  import_invalid: "Diese Datei konnte nicht gelesen werden.",
 };
 
 const UI: Record<Lang, UIStrings> = { en, de };

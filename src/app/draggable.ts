@@ -9,6 +9,7 @@ export type { DraggableData };
 export const Draggable = RawDraggable as unknown as ComponentType<{
   axis?: "x" | "y" | "both" | "none";
   handle?: string;
+  cancel?: string;
   nodeRef?: RefObject<HTMLElement>;
   position?: { x: number; y: number };
   onStart?: () => void;

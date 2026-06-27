@@ -18,15 +18,10 @@ function sectionHeader(page: Page, aisle: string) {
   return page.locator("section.section h2 span", { hasText: aisle }).first();
 }
 
-// Long-press a node to open its context menu (mouse interactions emit pointer
-// events in Chromium; the handler opens the menu after 500ms).
-async function longPress(page: Page, locator: ReturnType<Page["locator"]>) {
-  const box = await locator.boundingBox();
-  if (!box) throw new Error("element not visible for long-press");
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.waitForTimeout(650);
-  await page.mouse.up();
+// Open an item's options sheet via its ⋮ menu button.
+async function openItemMenu(page: Page, name: string) {
+  await row(page, name).locator(".item-menu-btn").click();
+  await expect(page.locator(".sheet")).toBeVisible();
 }
 
 test.beforeEach(async ({ page }) => {
@@ -97,14 +92,13 @@ test("checked items sink below unchecked ones in the same aisle", async ({
   await expect(produce.locator(".row .name")).toHaveText(["Bananas", "Apples"]);
 });
 
-test("long-press → move to aisle recategorizes and is remembered for that name", async ({
+test("menu → move to aisle recategorizes; deleting forgets the correction", async ({
   page,
 }) => {
   await addItem(page, "Pasta"); // → Pantry & Baking by keyword
   await expect(sectionHeader(page, "Pantry & Baking")).toBeVisible();
 
-  await longPress(page, row(page, "Pasta"));
-  await expect(page.locator(".sheet")).toBeVisible();
+  await openItemMenu(page, "Pasta");
   await page.getByRole("button", { name: /Move to aisle/ }).click();
   await page.locator(".sheet button.action", { hasText: "Produce" }).click();
 
@@ -116,35 +110,38 @@ test("long-press → move to aisle recategorizes and is remembered for that name
     produce.locator(".row .name", { hasText: "Pasta" }),
   ).toBeVisible();
 
-  // override is remembered: delete it, then re-adding the same name lands in
-  // Produce again — NOT its keyword-default aisle (Pantry & Baking)
-  await longPress(page, row(page, "Pasta"));
+  // deleting the item also drops its override: re-adding the same name falls
+  // back to its keyword aisle (Pantry & Baking), NOT Produce
+  await openItemMenu(page, "Pasta");
   await page.getByRole("button", { name: /Delete/ }).click();
   await expect(page.locator(".row", { hasText: "Pasta" })).toHaveCount(0);
 
   await addItem(page, "Pasta");
-  await expect(produce.locator(".row .name", { hasText: "Pasta" })).toHaveCount(
-    1,
-  );
   const pantry = page
     .locator("section.section")
     .filter({ has: page.locator("h2 span", { hasText: "Pantry & Baking" }) });
   await expect(pantry.locator(".row .name", { hasText: "Pasta" })).toHaveCount(
+    1,
+  );
+  await expect(produce.locator(".row .name", { hasText: "Pasta" })).toHaveCount(
     0,
   );
 });
 
-test("long-press → rename updates the item", async ({ page }) => {
+test("menu → rename updates the item (in-app, no system prompt)", async ({
+  page,
+}) => {
   await addItem(page, "Milk");
-  page.once("dialog", (d) => d.accept("Oat Milk"));
-  await longPress(page, row(page, "Milk"));
+  await openItemMenu(page, "Milk");
   await page.getByRole("button", { name: /Rename/ }).click();
+  await page.locator(".sheet .add-group input").fill("Oat Milk");
+  await page.locator(".sheet .add-group button").click();
   await expect(row(page, "Oat Milk")).toBeVisible();
 });
 
-test("long-press → delete removes the item", async ({ page }) => {
+test("menu → delete removes the item", async ({ page }) => {
   await addItem(page, "Tomatoes");
-  await longPress(page, row(page, "Tomatoes"));
+  await openItemMenu(page, "Tomatoes");
   await page.getByRole("button", { name: /Delete/ }).click();
   await expect(page.locator(".row", { hasText: "Tomatoes" })).toHaveCount(0);
   await expect(page.locator(".empty")).toBeVisible();
@@ -349,34 +346,6 @@ test.describe("manage aisles (desktop)", () => {
     );
   });
 
-  test("drag a list row onto another aisle's section recategorizes it (feature F)", async ({
-    page,
-  }) => {
-    await addItem(page, "Milk"); // Dairy & Eggs
-    await addItem(page, "Apples"); // Produce
-
-    const grip = row(page, "Milk").locator(".item-drag-handle");
-    const produce = page.locator('.section[data-aisle="Produce"]');
-    await grip.hover();
-    const g = await grip.boundingBox();
-    const ps = await produce.boundingBox();
-    if (!g || !ps) throw new Error("not laid out");
-
-    await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(ps.x + ps.width / 2, ps.y + ps.height - 10, {
-      steps: 16,
-    });
-    // the target section is highlighted while hovering
-    await expect(produce).toHaveClass(/drop-target/);
-    await page.mouse.up();
-
-    // Milk now lives under Produce
-    await expect(
-      produce.locator(".row .name", { hasText: "Milk" }),
-    ).toHaveCount(1);
-  });
-
   test("drag a kanban card to another column recategorizes it (feature F)", async ({
     page,
   }) => {
@@ -384,12 +353,13 @@ test.describe("manage aisles (desktop)", () => {
     await addItem(page, "Apples"); // Produce
     await page.getByRole("button", { name: "Columns" }).click();
 
-    const grip = page
-      .locator('.column[data-aisle="Dairy & Eggs"] .kcard', { hasText: "Milk" })
-      .locator(".item-drag-handle");
+    // the whole card is the drag handle now (not a separate grip)
+    const card = page.locator('.column[data-aisle="Dairy & Eggs"] .kcard', {
+      hasText: "Milk",
+    });
     const produceCol = page.locator('.column[data-aisle="Produce"]');
-    await grip.hover();
-    const g = await grip.boundingBox();
+    await card.hover();
+    const g = await card.boundingBox();
     const pc = await produceCol.boundingBox();
     if (!g || !pc) throw new Error("not laid out");
 
@@ -430,8 +400,8 @@ test("custom group: create, move an item into it, then delete (feature C)", asyn
   ).toBeVisible();
   await page.locator(".sheet button.done").click();
 
-  // long-press the item → Move to aisle… → Garage
-  await longPress(page, row(page, "Garden Gnome"));
+  // item menu → Move to aisle… → Garage
+  await openItemMenu(page, "Garden Gnome");
   await page.getByRole("button", { name: /Move to aisle/ }).click();
   await page.locator(".sheet button.action", { hasText: "Garage" }).click();
 
@@ -459,29 +429,52 @@ test("custom group: create, move an item into it, then delete (feature C)", asyn
 test("export then import round-trips the full state (feature D)", async ({
   page,
 }) => {
+  // Stub the webxdc file APIs: sendToChat captures the generated file's text,
+  // importFiles hands it back as a File. No real chat/file-picker in tests.
+  await page.evaluate(() => {
+    const w = window as unknown as {
+      __lastFile: string;
+      webxdc: {
+        sendToChat: (m: { file: { plainText: string } }) => Promise<void>;
+        importFiles: () => Promise<File[]>;
+      };
+    };
+    w.__lastFile = "";
+    w.webxdc.sendToChat = async (m) => {
+      w.__lastFile = m.file.plainText;
+    };
+    w.webxdc.importFiles = async () => [
+      new File([w.__lastFile], "grocery-list.json", {
+        type: "application/json",
+      }),
+    ];
+  });
+
   await addItem(page, "Milk");
   await addItem(page, "Bread");
 
-  // grab the exported JSON from the export sheet's textarea
+  // export → captures the JSON via the stubbed sendToChat
   await openSettings(page);
   await page.locator(".settings-row", { hasText: "Export" }).click();
-  const json = await page.locator("textarea.data-area").inputValue();
-  expect(json).toContain("Milk");
-  await page.locator(".sheet button.done").click(); // close export sheet
+  await page
+    .locator(".sheet button.action", { hasText: "Send to chat" })
+    .click();
+  expect(await page.evaluate(() => (window as any).__lastFile)).toContain(
+    "Milk",
+  );
 
   // wipe the list
-  await longPress(page, row(page, "Milk"));
+  await openItemMenu(page, "Milk");
   await page.getByRole("button", { name: /Delete/ }).click();
-  await longPress(page, row(page, "Bread"));
+  await openItemMenu(page, "Bread");
   await page.getByRole("button", { name: /Delete/ }).click();
   await expect(page.locator(".row")).toHaveCount(0);
 
-  // import the saved JSON back
+  // import → stubbed importFiles returns the captured file
   await openSettings(page);
   await page.locator(".settings-row", { hasText: "Import" }).click();
-  await page.locator("textarea.data-area").fill(json);
   await page
-    .locator(".sheet button.action", { hasText: "Replace list" })
+    .locator(".sheet button.action", { hasText: "Choose file" })
     .click();
 
   await expect(row(page, "Milk")).toBeVisible();
