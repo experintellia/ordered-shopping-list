@@ -300,20 +300,21 @@ main.content {
 .board-wrap {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  height: 100%;
 }
+/* chip row stays put as its own flex row; the board below it scrolls,
+   so the page never scrolls vertically and nothing hides under the chips */
 .aisle-switch.sticky {
-  position: sticky;
-  top: 0;
-  z-index: 5;
+  flex: 0 0 auto;
   background: var(--bg);
 }
 .board {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow: auto;
   scroll-snap-type: x proximity;
   padding: 0 12px 12px;
   scrollbar-width: none;

@@ -292,11 +292,8 @@ export function BoardView(props: {
   const jump = (idx: number) => {
     const board = boardRef.current;
     const col = board?.querySelectorAll<HTMLElement>(".column")[idx];
-    col?.scrollIntoView({
-      behavior: "smooth",
-      inline: "start",
-      block: "nearest",
-    });
+    if (board && col)
+      board.scrollTo({ left: col.offsetLeft, behavior: "smooth" });
     // retrigger the flash even if the same aisle is tapped twice
     col?.classList.remove("flash");
     void col?.offsetWidth;
