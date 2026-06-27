@@ -12,6 +12,9 @@ on:
     tags:
       - "v*.*.*"
 
+permissions:
+  contents: write # create releases / upload .xdc on tags
+
 jobs:
   build:
     runs-on: ubuntu-latest
