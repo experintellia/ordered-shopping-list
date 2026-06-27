@@ -38,23 +38,6 @@ function usePref<T extends string>(key: string, def: T): [T, (v: T) => void] {
     },
   ];
 }
-function usePrefBool(
-  key: string,
-  def: boolean,
-): [boolean, (v: boolean) => void] {
-  const [v, setV] = useState<boolean>(() => {
-    const s = localStorage.getItem(key);
-    return s == null ? def : s === "1";
-  });
-  return [
-    v,
-    (next: boolean) => {
-      localStorage.setItem(key, next ? "1" : "0");
-      setV(next);
-    },
-  ];
-}
-
 function Header(props: {
   view: View;
   setView: (v: View) => void;
@@ -139,7 +122,12 @@ export function App() {
     "grocery.completed",
     "session", // hide completed after restart, but keep this session's visible
   );
-  const [showWho, setShowWho] = usePrefBool("grocery.showWho", false);
+  const [showWhoPref, setShowWhoPref] = usePref<"1" | "0">(
+    "grocery.showWho",
+    "0",
+  );
+  const showWho = showWhoPref === "1";
+  const setShowWho = (v: boolean) => setShowWhoPref(v ? "1" : "0");
   const [langPref, setLangPrefState] = useState<LangPref>(getLangPref());
   const [overlay, setOverlay] = useState<OverlayState>(null);
 

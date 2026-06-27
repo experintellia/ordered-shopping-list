@@ -16,8 +16,6 @@ export const CATEGORIES = [
 
 export type Category = (typeof CATEGORIES)[number];
 
-export const DEFAULT_AISLES: Category[] = [...CATEGORIES];
-
 export const FALLBACK_CATEGORY: Category = "Other";
 
 // A language pack maps a Category to the list of keywords (already normalized:

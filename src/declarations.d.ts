@@ -19,8 +19,6 @@ declare module "y-webxdc" {
   export default class WebxdcProvider {
     constructor(options: WebxdcProviderOptions);
     syncToChatPeers(): void;
-    resendAllUpdates: boolean;
-    on(name: "sync", handler: (e: { hasQueued: boolean }) => void): void;
   }
 }
 

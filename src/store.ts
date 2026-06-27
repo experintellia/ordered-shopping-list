@@ -1,7 +1,7 @@
 import * as Y from "yjs";
 import WebxdcProvider from "y-webxdc";
 import { categorize, normalize } from "./categorizer";
-import { DEFAULT_AISLES } from "./categories";
+import { CATEGORIES } from "./categories";
 import { resolveLang } from "./i18n";
 
 // An "aisle" / category is a free string: a built-in category key or a
@@ -115,7 +115,7 @@ export function customAisles(): Aisle[] {
 
 /** Every known aisle: built-in categories plus custom groups. */
 export function knownAisles(): Aisle[] {
-  return [...DEFAULT_AISLES, ...customAisles()];
+  return [...CATEGORIES, ...customAisles()];
 }
 
 /**
@@ -216,7 +216,7 @@ export function addItem(rawName: string): void {
     m.set("category", category);
     m.set("checked", false);
     m.set("addedBy", webxdc.selfName || webxdc.selfAddr || "");
-    m.set("ts", nextTimestamp());
+    m.set("ts", Date.now());
   });
   flush();
 }
@@ -418,7 +418,7 @@ export function importState(data: ExportData): void {
       m.set("category", String(it.category ?? "Other"));
       m.set("checked", Boolean(it.checked));
       m.set("addedBy", String(it.addedBy ?? ""));
-      m.set("ts", Number(it.ts ?? nextTimestamp()));
+      m.set("ts", Number(it.ts ?? Date.now()));
     }
     if (Array.isArray(data.aisleOrder)) {
       yAisleOrder.insert(0, data.aisleOrder.map(String));
@@ -433,12 +433,6 @@ export function importState(data: ExportData): void {
     }
   });
   flush();
-}
-
-// Date.now is available in the app runtime (only the workflow sandbox forbids
-// it). Kept in a helper so it is easy to swap if needed.
-function nextTimestamp(): number {
-  return Date.now();
 }
 
 export { ydoc };

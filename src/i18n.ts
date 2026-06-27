@@ -1,4 +1,4 @@
-import { CATEGORIES, Category } from "./categories";
+import { Category } from "./categories";
 
 // Supported UI languages. The categorizer keyword packs live in categories.ts
 // and are keyed by the same codes.
@@ -156,6 +156,3 @@ export function categoryLabel(cat: string, lang: Lang = resolveLang()): string {
     return (deCategoryLabels as Record<string, string>)[cat] ?? cat;
   return cat;
 }
-
-// Re-exported so callers can iterate categories without importing categories.ts.
-export { CATEGORIES };
