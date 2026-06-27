@@ -1,0 +1,6 @@
+#!/bin/sh
+# Mirror CI's `pnpm check` so a commit can't fail the release build on format.
+npx prettier --check . || {
+  echo "Prettier check failed. Run 'npm run fix' to format." >&2
+  exit 1
+}

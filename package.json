@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
     "dev": "vite --host --port 3000",
     "start": "vite --host --port 3000",
     "build": "tsc && vite build",

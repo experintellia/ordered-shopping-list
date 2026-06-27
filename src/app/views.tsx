@@ -53,7 +53,8 @@ function useRowGestures(id: string) {
         const dx = e.clientX - s.sx;
         const dy = e.clientY - s.sy;
         if (s.mode === "idle") {
-          if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) s.mode = "swipe";
+          if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy))
+            s.mode = "swipe";
           else if (Math.abs(dy) > 10) s.mode = "scroll";
         }
         if (s.mode === "swipe") {

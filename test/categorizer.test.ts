@@ -78,7 +78,9 @@ describe("categorize (German language pack)", () => {
     // "kokosmilch" must beat "milch" (Dairy); "kürbiskerne" beats "kürbis"
     // (Produce); "ahornsirup" beats "sirup" (Beverages); "milchshake" → drink
     expect(categorize("Kokosmilch", noOverrides, "de")).toBe("Pantry & Baking");
-    expect(categorize("Kürbiskerne", noOverrides, "de")).toBe("Pantry & Baking");
+    expect(categorize("Kürbiskerne", noOverrides, "de")).toBe(
+      "Pantry & Baking",
+    );
     expect(categorize("Ahornsirup", noOverrides, "de")).toBe("Pantry & Baking");
     expect(categorize("Erdnussbutter", noOverrides, "de")).toBe(
       "Pantry & Baking",
