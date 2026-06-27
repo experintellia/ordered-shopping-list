@@ -1,0 +1,735 @@
+:root {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface-2: #ececef;
+  --text: #1c1c1e;
+  --text-dim: #8a8a8e;
+  --accent: #34c759;
+  --accent-text: #ffffff;
+  --border: #e0e0e3;
+  --danger: #ff3b30;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --radius: 14px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --surface: #1c1c1e;
+    --surface-2: #2c2c2e;
+    --text: #f2f2f7;
+    --text-dim: #8d8d93;
+    --accent: #30d158;
+    --accent-text: #00250c;
+    --border: #38383a;
+    --danger: #ff453a;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font:
+    16px/1.4 -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  overscroll-behavior: none;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* ---- header ---- */
+header.bar {
+  flex: 0 0 auto;
+  padding: 14px 16px 8px;
+  background: var(--bg);
+}
+.titlerow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.headerbtns {
+  display: flex;
+  gap: 8px;
+}
+.iconbtn {
+  border: none;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.iconbtn:active {
+  opacity: 0.6;
+}
+
+/* ---- segmented control ---- */
+.segmented {
+  display: flex;
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 2px;
+  gap: 2px;
+}
+.segmented button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.segmented button.active {
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+/* ---- content ---- */
+main.content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 0 8px;
+}
+
+.empty {
+  text-align: center;
+  color: var(--text-dim);
+  margin-top: 25vh;
+  padding: 0 24px;
+}
+.empty .big {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+
+/* ---- list view ---- */
+.section {
+  margin: 0 16px 18px;
+}
+.section h2 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  margin: 0 0 6px 4px;
+  display: flex;
+  justify-content: space-between;
+}
+.card-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+/* row-outer = drag node + swipe container; .row = the sliding content on top */
+.row-outer {
+  position: relative;
+  border-bottom: 1px solid var(--border);
+}
+.card-list .row-outer:last-child {
+  border-bottom: none;
+}
+.row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  background: var(--surface);
+  cursor: pointer;
+  user-select: none;
+  touch-action: pan-y;
+}
+.row:active {
+  background: var(--surface-2);
+}
+
+/* red delete affordance revealed when swiping a row/card left */
+.swipe-delete {
+  position: absolute;
+  inset: 0;
+  background: var(--danger);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 22px;
+  font-size: 18px;
+  border-radius: inherit;
+}
+.check {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--text-dim);
+  display: grid;
+  place-items: center;
+  color: var(--accent-text);
+  font-size: 14px;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+.row.checked .check {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.row .name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row.checked .name {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+.row .who {
+  font-size: 12px;
+  color: var(--text-dim);
+  flex: 0 0 auto;
+}
+
+/* drag-between-aisles grip handle (on rows and cards) */
+.item-drag-handle {
+  flex: 0 0 auto;
+  color: var(--text-dim);
+  font-size: 17px;
+  line-height: 1;
+  letter-spacing: -2px;
+  padding: 8px 4px 8px 10px;
+  margin: -8px -4px -8px 0;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.item-drag-handle:active {
+  cursor: grabbing;
+}
+/* highlight the list section an item is being dragged over */
+.section.drop-target .card-list {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---- kanban view ---- */
+.aisle-switch {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 16px 10px;
+  scrollbar-width: none;
+}
+.aisle-switch::-webkit-scrollbar {
+  display: none;
+}
+.chip {
+  flex: 0 0 auto;
+  border: none;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.chip.active {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+/* Trello-style: multiple columns visible, free horizontal scroll, gentle snap.
+   The page (main.content) scrolls vertically; the board scrolls horizontally —
+   columns are not their own scroll containers, so a dragged card is never
+   clipped while moving between columns. */
+.board-wrap {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.aisle-switch.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+}
+.board {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x proximity;
+  padding: 0 12px 12px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.board::-webkit-scrollbar {
+  display: none;
+}
+.column {
+  flex: 0 0 min(82vw, 300px);
+  scroll-snap-align: start;
+  background: var(--surface-2);
+  border-radius: 16px;
+  padding: 12px 10px;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  transition: outline-color 0.15s ease;
+}
+/* highlight the column an item is being dragged over */
+.column.drop-target {
+  outline-color: var(--accent);
+}
+.column h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 2px 6px 10px;
+}
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.kcard-outer {
+  position: relative;
+  border-radius: var(--radius);
+}
+.kcard {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 14px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  user-select: none;
+  touch-action: pan-y;
+}
+.kcard:active {
+  background: var(--surface-2);
+}
+.kcard .name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kcard.checked .name {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+.kcard.checked .check {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.col-empty {
+  color: var(--text-dim);
+  text-align: center;
+  margin-top: 30px;
+}
+
+/* ---- add bar ---- */
+form.addbar {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px calc(8px + var(--safe-bottom));
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+form.addbar input {
+  flex: 1 1 auto;
+  border: none;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 16px;
+  padding: 12px 14px;
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+form.addbar input:focus {
+  outline: 2px solid var(--accent);
+}
+form.addbar button {
+  flex: 0 0 auto;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 16px;
+  font-weight: 700;
+  padding: 0 18px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+form.addbar button:active {
+  opacity: 0.7;
+}
+
+/* ---- overlays / bottom sheet ---- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 50;
+  animation: fade 0.15s ease;
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+.sheet {
+  width: 100%;
+  max-width: 640px;
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 8px 0 calc(12px + var(--safe-bottom));
+  box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
+  animation: slideup 0.2s ease;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+@keyframes slideup {
+  from {
+    transform: translateY(100%);
+  }
+}
+.sheet .grip {
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border);
+  margin: 6px auto 10px;
+}
+.sheet .sheet-title {
+  font-weight: 700;
+  font-size: 17px;
+  padding: 4px 20px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.sheet .sheet-title small {
+  display: block;
+  font-weight: 500;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.sheet button.action {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 17px;
+  text-align: left;
+  padding: 15px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.sheet button.action:active {
+  background: var(--surface-2);
+}
+.sheet button.action.danger {
+  color: var(--danger);
+}
+.sheet button.action .tick {
+  margin-left: auto;
+  color: var(--accent);
+  font-weight: 700;
+}
+.sheet .section-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  padding: 12px 20px 4px;
+}
+
+/* ---- settings (grouped cards) ---- */
+.settings {
+  padding: 6px 14px 4px;
+}
+.settings-group {
+  margin-bottom: 16px;
+}
+.settings-group-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  padding: 0 8px 6px;
+}
+.settings-card {
+  background: var(--surface-2);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  text-align: left;
+  padding: 14px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+}
+.settings-card .settings-row:last-child {
+  border-bottom: none;
+}
+.settings-row:active {
+  background: var(--border);
+}
+.settings-row.selected {
+  font-weight: 600;
+}
+.settings-row .radio-tick {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 17px;
+}
+.settings-row .chevron {
+  color: var(--text-dim);
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* toggle switch */
+.switch {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--border);
+  position: relative;
+  transition: background 0.18s ease;
+}
+.switch.on {
+  background: var(--accent);
+}
+.switch .knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.18s ease;
+}
+.switch.on .knob {
+  transform: translateX(18px);
+}
+
+/* manage aisles rows (drag to reorder) */
+.manage-list {
+  padding: 4px 0;
+}
+.manage-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.manage-row .name {
+  flex: 1 1 auto;
+}
+.manage-row.hidden-aisle .name {
+  color: var(--text-dim);
+}
+.manage-row .drag-handle {
+  flex: 0 0 auto;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text-dim);
+  cursor: grab;
+  padding: 4px 6px;
+  margin: -4px 0;
+  touch-action: none; /* let pointer drag work without scrolling */
+  user-select: none;
+}
+.manage-row.dragging {
+  opacity: 0.85;
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
+  cursor: grabbing;
+}
+/* ghost styling for the row being dragged */
+.react-draggable-dragging {
+  opacity: 0.6;
+  background: var(--surface-2) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  z-index: 3;
+}
+
+/* live drop indicator: where the dragged row would land */
+.drop-line {
+  height: 0;
+  margin: -1.5px 16px;
+  border-top: 3px solid var(--accent);
+  border-radius: 3px;
+  position: relative;
+  z-index: 4;
+}
+.drop-line::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: -5.5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+/* dim non-dragged rows slightly so the indicator pops */
+.manage-list.dragging .manage-row:not(.react-draggable-dragging) {
+  opacity: 0.85;
+}
+.manage-row .del-aisle {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--danger);
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.manage-row .del-aisle:active {
+  background: var(--surface-2);
+}
+
+/* add custom group */
+.add-group {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px 4px;
+}
+.add-group input {
+  flex: 1 1 auto;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+.add-group input:focus {
+  outline: 2px solid var(--accent);
+}
+.add-group button {
+  flex: 0 0 auto;
+  border: none;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 0 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* import / export */
+.data-area {
+  display: block;
+  width: calc(100% - 40px);
+  margin: 8px 20px;
+  height: 160px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  padding: 10px;
+  border-radius: 10px;
+}
+.file-input {
+  display: block;
+  margin: 4px 20px 8px;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+.import-error {
+  color: var(--danger);
+  font-size: 14px;
+  padding: 4px 20px;
+}
+.sheet .done {
+  display: block;
+  width: calc(100% - 40px);
+  margin: 14px 20px 0;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 17px;
+  font-weight: 700;
+  padding: 14px;
+  border-radius: 12px;
+  cursor: pointer;
+}
