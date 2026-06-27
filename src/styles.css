@@ -60,9 +60,22 @@ body {
   margin: 0 auto;
 }
 
+/* On desktop, let the column (board) view spread across the full window;
+   the list view stays in its readable 640px column. */
+@media (min-width: 700px) {
+  #app:has(.board-wrap) {
+    max-width: none;
+  }
+}
+
 /* ---- header ---- */
 header.bar {
   flex: 0 0 auto;
+  /* Stay centered at the list width even when the board view widens #app, so
+     switching modes doesn't shift the header. */
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
   padding: 14px 16px 8px;
   background: var(--bg);
 }
@@ -235,26 +248,23 @@ main.content {
   flex: 0 0 auto;
 }
 
-/* drag-between-aisles grip handle (on rows and cards) */
-.item-drag-handle {
+/* ⋮ options button (on rows and cards) */
+.item-menu-btn {
   flex: 0 0 auto;
+  border: none;
+  background: none;
   color: var(--text-dim);
-  font-size: 17px;
+  font-size: 20px;
   line-height: 1;
-  letter-spacing: -2px;
-  padding: 8px 4px 8px 10px;
-  margin: -8px -4px -8px 0;
-  cursor: grab;
+  padding: 6px 6px 6px 10px;
+  margin: -6px -6px -6px 0;
+  border-radius: 8px;
+  cursor: pointer;
   touch-action: none;
   user-select: none;
 }
-.item-drag-handle:active {
-  cursor: grabbing;
-}
-/* highlight the list section an item is being dragged over */
-.section.drop-target .card-list {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+.item-menu-btn:active {
+  background: var(--surface-2);
 }
 
 /* ---- kanban view ---- */
@@ -326,6 +336,19 @@ main.content {
 .column.drop-target {
   outline-color: var(--accent);
 }
+/* brief pulse when jumped to via an aisle chip */
+.column.flash {
+  animation: aisle-flash 0.9s ease;
+}
+@keyframes aisle-flash {
+  0%,
+  100% {
+    outline-color: transparent;
+  }
+  25% {
+    outline-color: var(--accent);
+  }
+}
 .column h2 {
   font-size: 17px;
   font-weight: 700;
@@ -350,11 +373,14 @@ main.content {
   background: var(--surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  cursor: pointer;
+  cursor: grab;
   user-select: none;
-  touch-action: pan-y;
+  /* whole card is draggable between aisles, so claim the touch gesture.
+     ponytail: costs touch-scroll that starts on a card; fine for short aisles. */
+  touch-action: none;
 }
 .kcard:active {
+  cursor: grabbing;
   background: var(--surface-2);
 }
 .kcard .name {
@@ -381,6 +407,10 @@ main.content {
 /* ---- add bar ---- */
 form.addbar {
   flex: 0 0 auto;
+  /* Match the header: centered list-width footer, stable across modes. */
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
   display: flex;
   gap: 8px;
   padding: 8px 16px calc(8px + var(--safe-bottom));
@@ -695,26 +725,6 @@ form.addbar button:active {
 }
 
 /* import / export */
-.data-area {
-  display: block;
-  width: calc(100% - 40px);
-  margin: 8px 20px;
-  height: 160px;
-  resize: vertical;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  color: var(--text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
-  padding: 10px;
-  border-radius: 10px;
-}
-.file-input {
-  display: block;
-  margin: 4px 20px 8px;
-  color: var(--text-dim);
-  font-size: 14px;
-}
 .import-error {
   color: var(--danger);
   font-size: 14px;

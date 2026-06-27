@@ -9,28 +9,22 @@ import {
 import { Draggable, DraggableData } from "./draggable";
 import { firstName, useUI } from "./ui";
 
-// Body gestures on a row/card:
-//   tap            → toggle checked
-//   long-press     → open the item menu (move / rename / delete)
-//   horizontal swipe left past a threshold → delete
-// (vertical drag falls through to scrolling; the grip handle does aisle DnD.)
+// Body gestures on a list row:
+//   tap                                   → toggle checked
+//   horizontal swipe left past threshold  → delete
+// (vertical drag falls through to scrolling. Item options live in the ⋮ menu;
+//  in the board view the whole card is draggable to move it between aisles.)
 const SWIPE_DELETE_AT = 120;
 
-function useRowGestures(id: string, onLongPress: (id: string) => void) {
+function useRowGestures(id: string) {
   const [tx, setTx] = useState(0);
   const [animate, setAnimate] = useState(true);
   const st = useRef({
-    timer: 0,
-    longFired: false,
     sx: 0,
     sy: 0,
     mode: "idle" as "idle" | "swipe" | "scroll",
     tx: 0,
   });
-  const clearTimer = () => {
-    if (st.current.timer) window.clearTimeout(st.current.timer);
-    st.current.timer = 0;
-  };
   const settle = (x: number) => {
     setAnimate(true);
     setTx(x);
@@ -43,7 +37,6 @@ function useRowGestures(id: string, onLongPress: (id: string) => void) {
     handlers: {
       onPointerDown: (e: React.PointerEvent) => {
         const s = st.current;
-        s.longFired = false;
         s.sx = e.clientX;
         s.sy = e.clientY;
         s.mode = "idle";
@@ -54,24 +47,14 @@ function useRowGestures(id: string, onLongPress: (id: string) => void) {
         } catch {
           /* not supported (e.g. happy-dom) — fine */
         }
-        s.timer = window.setTimeout(() => {
-          s.longFired = true;
-          navigator.vibrate?.(10);
-          onLongPress(id);
-        }, 500);
       },
       onPointerMove: (e: React.PointerEvent) => {
         const s = st.current;
         const dx = e.clientX - s.sx;
         const dy = e.clientY - s.sy;
         if (s.mode === "idle") {
-          if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
-            s.mode = "swipe";
-            clearTimer();
-          } else if (Math.abs(dy) > 10) {
-            s.mode = "scroll";
-            clearTimer();
-          }
+          if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) s.mode = "swipe";
+          else if (Math.abs(dy) > 10) s.mode = "scroll";
         }
         if (s.mode === "swipe") {
           const nx = Math.max(-220, Math.min(0, dx));
@@ -81,28 +64,29 @@ function useRowGestures(id: string, onLongPress: (id: string) => void) {
       },
       onPointerUp: () => {
         const s = st.current;
-        clearTimer();
         if (s.mode === "swipe") {
           if (s.tx <= -SWIPE_DELETE_AT) deleteItem(id);
           else settle(0);
-        } else if (s.mode === "idle" && !s.longFired) {
+        } else if (s.mode === "idle") {
           toggleChecked(id);
         }
       },
-      onPointerCancel: () => {
-        clearTimer();
-        settle(0);
-      },
+      onPointerCancel: () => settle(0),
     },
   };
 }
 
-// Drag an item by its grip and drop it onto another aisle's column/section.
-// The drop target is found by hit-testing the dragged node's centre against any
-// ancestor carrying a [data-aisle] attribute.
-function useItemDrag(item: Item, onDropAisle: (a: string | null) => void) {
+// Drag the whole card and drop it onto another aisle's column. The drop target
+// is found by hit-testing the dragged node's centre against any ancestor with a
+// [data-aisle] attribute. A press that doesn't move is treated as a tap (onTap).
+function useItemDrag(
+  item: Item,
+  onDropAisle: (a: string | null) => void,
+  onTap: () => void,
+) {
   const nodeRef = useRef<HTMLElement>(null);
   const [pos, setPos] = useState({ x: 0, y: 0 });
+  const moved = useRef(false);
 
   const aisleAtCentre = (): string | null => {
     const node = nodeRef.current;
@@ -125,7 +109,11 @@ function useItemDrag(item: Item, onDropAisle: (a: string | null) => void) {
     draggable: {
       nodeRef: nodeRef as RefObject<HTMLElement>,
       position: pos,
+      onStart: () => {
+        moved.current = false;
+      },
       onDrag: (_e: unknown, d: DraggableData) => {
+        if (Math.abs(d.x) > 5 || Math.abs(d.y) > 5) moved.current = true;
         setPos({ x: d.x, y: d.y });
         onDropAisle(aisleAtCentre());
       },
@@ -133,24 +121,38 @@ function useItemDrag(item: Item, onDropAisle: (a: string | null) => void) {
         const aisle = aisleAtCentre();
         setPos({ x: 0, y: 0 });
         onDropAisle(null);
+        if (!moved.current) {
+          onTap(); // a click, not a drag → toggle checked
+          return;
+        }
         if (aisle && aisle !== item.category) recategorize(item.id, aisle);
       },
     },
   };
 }
 
-// stop pointer events on the grip from reaching the body's tap/swipe handlers
-// (react-draggable uses mouse/touch events, which still get through)
+// stop pointer events on the menu button from reaching the row's tap/swipe
+// handlers (the card's drag is excluded separately via Draggable's `cancel`).
 const stopPointer = {
   onPointerDown: (e: React.PointerEvent) => e.stopPropagation(),
   onPointerUp: (e: React.PointerEvent) => e.stopPropagation(),
 };
 
-function Grip() {
+// ⋮ button: opens the item menu (move / rename / delete). Replaces both the
+// drag grip and the long-press gesture.
+function MenuButton(props: { id: string; onOpen: (id: string) => void }) {
   return (
-    <span className="item-drag-handle" aria-label="Move item" {...stopPointer}>
-      ⠿
-    </span>
+    <button
+      className="item-menu-btn"
+      aria-label="Item options"
+      onClick={(e) => {
+        e.stopPropagation();
+        props.onOpen(props.id);
+      }}
+      {...stopPointer}
+    >
+      ⋮
+    </button>
   );
 }
 
@@ -185,55 +187,41 @@ function swipeStyle(tx: number, animate: boolean) {
 function Row(props: {
   item: Item;
   showWho: boolean;
-  onLongPress: (id: string) => void;
-  onDropAisle: (a: string | null) => void;
+  onOpenMenu: (id: string) => void;
 }) {
-  const { tx, animate, handlers } = useRowGestures(
-    props.item.id,
-    props.onLongPress,
-  );
-  const { nodeRef, draggable } = useItemDrag(props.item, props.onDropAisle);
+  const { tx, animate, handlers } = useRowGestures(props.item.id);
   return (
-    <Draggable handle=".item-drag-handle" {...draggable}>
-      <li ref={nodeRef as RefObject<HTMLLIElement>} className="row-outer">
-        <SwipeHint />
-        <div
-          className={"row" + (props.item.checked ? " checked" : "")}
-          style={swipeStyle(tx, animate)}
-          {...handlers}
-        >
-          <span className="check">{props.item.checked ? "✓" : ""}</span>
-          <span className="name">{props.item.name}</span>
-          {props.showWho && props.item.addedBy ? (
-            <span className="who">{firstName(props.item.addedBy)}</span>
-          ) : null}
-          <Grip />
-        </div>
-      </li>
-    </Draggable>
+    <li className="row-outer">
+      <SwipeHint />
+      <div
+        className={"row" + (props.item.checked ? " checked" : "")}
+        style={swipeStyle(tx, animate)}
+        {...handlers}
+      >
+        <span className="check">{props.item.checked ? "✓" : ""}</span>
+        <span className="name">{props.item.name}</span>
+        {props.showWho && props.item.addedBy ? (
+          <span className="who">{firstName(props.item.addedBy)}</span>
+        ) : null}
+        <MenuButton id={props.item.id} onOpen={props.onOpenMenu} />
+      </div>
+    </li>
   );
 }
 
 export function ListView(props: {
   groups: AisleGroup[];
   showWho: boolean;
-  onLongPress: (id: string) => void;
+  onOpenMenu: (id: string) => void;
 }) {
   const { label } = useUI();
-  const [dropAisle, setDropAisle] = useState<string | null>(null);
   if (props.groups.length === 0) return <EmptyState />;
   return (
     <div>
       {props.groups.map((g) => {
         const remaining = g.items.filter((i) => !i.checked).length;
         return (
-          <section
-            className={
-              "section" + (dropAisle === g.category ? " drop-target" : "")
-            }
-            key={g.category}
-            data-aisle={g.category}
-          >
+          <section className="section" key={g.category} data-aisle={g.category}>
             <h2>
               <span>{label(g.category)}</span>
               <span>{remaining}</span>
@@ -244,8 +232,7 @@ export function ListView(props: {
                   key={item.id}
                   item={item}
                   showWho={props.showWho}
-                  onLongPress={props.onLongPress}
-                  onDropAisle={setDropAisle}
+                  onOpenMenu={props.onOpenMenu}
                 />
               ))}
             </ul>
@@ -261,29 +248,24 @@ export function ListView(props: {
 function Card(props: {
   item: Item;
   showWho: boolean;
-  onLongPress: (id: string) => void;
+  onOpenMenu: (id: string) => void;
   onDropAisle: (a: string | null) => void;
 }) {
-  const { tx, animate, handlers } = useRowGestures(
-    props.item.id,
-    props.onLongPress,
+  const { nodeRef, draggable } = useItemDrag(
+    props.item,
+    props.onDropAisle,
+    () => toggleChecked(props.item.id),
   );
-  const { nodeRef, draggable } = useItemDrag(props.item, props.onDropAisle);
   return (
-    <Draggable handle=".item-drag-handle" {...draggable}>
+    <Draggable {...draggable} cancel=".item-menu-btn">
       <div ref={nodeRef as RefObject<HTMLDivElement>} className="kcard-outer">
-        <SwipeHint />
-        <div
-          className={"kcard" + (props.item.checked ? " checked" : "")}
-          style={swipeStyle(tx, animate)}
-          {...handlers}
-        >
+        <div className={"kcard" + (props.item.checked ? " checked" : "")}>
           <span className="check">{props.item.checked ? "✓" : ""}</span>
           <span className="name">{props.item.name}</span>
           {props.showWho && props.item.addedBy ? (
             <span className="who">{firstName(props.item.addedBy)}</span>
           ) : null}
-          <Grip />
+          <MenuButton id={props.item.id} onOpen={props.onOpenMenu} />
         </div>
       </div>
     </Draggable>
@@ -293,7 +275,7 @@ function Card(props: {
 export function BoardView(props: {
   groups: AisleGroup[];
   showWho: boolean;
-  onLongPress: (id: string) => void;
+  onOpenMenu: (id: string) => void;
 }) {
   const { label } = useUI();
   const boardRef = useRef<HTMLDivElement>(null);
@@ -309,11 +291,16 @@ export function BoardView(props: {
 
   const jump = (idx: number) => {
     const board = boardRef.current;
-    board?.querySelectorAll<HTMLElement>(".column")[idx]?.scrollIntoView({
+    const col = board?.querySelectorAll<HTMLElement>(".column")[idx];
+    col?.scrollIntoView({
       behavior: "smooth",
       inline: "start",
       block: "nearest",
     });
+    // retrigger the flash even if the same aisle is tapped twice
+    col?.classList.remove("flash");
+    void col?.offsetWidth;
+    col?.classList.add("flash");
     setActive(idx);
   };
 
@@ -362,7 +349,7 @@ export function BoardView(props: {
                   key={item.id}
                   item={item}
                   showWho={props.showWho}
-                  onLongPress={props.onLongPress}
+                  onOpenMenu={props.onOpenMenu}
                   onDropAisle={setDropAisle}
                 />
               ))}
