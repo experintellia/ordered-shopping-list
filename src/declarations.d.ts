@@ -5,7 +5,7 @@ declare module "y-webxdc" {
   export interface EditInfo {
     document: string;
     summary: string;
-    startinfo: string;
+    startinfo?: string;
   }
 
   export interface WebxdcProviderOptions {

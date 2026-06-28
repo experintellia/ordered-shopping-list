@@ -2,7 +2,7 @@ import * as Y from "yjs";
 import WebxdcProvider from "y-webxdc";
 import { categorize, normalize } from "./categorizer";
 import { CATEGORIES } from "./categories";
-import { resolveLang } from "./i18n";
+import { resolveLang, t } from "./i18n";
 
 // An "aisle" / category is a free string: a built-in category key or a
 // user-created custom group name.
@@ -32,6 +32,11 @@ const yCustomAisles = ydoc.getArray<string>("customAisles");
 
 const webxdc = window.webxdc;
 
+// True only when this session created the list from empty (see addItem). The
+// info line shown in chat is gated to the first sync per session by y-webxdc, so
+// this only needs to be right by then — addItem's synchronous flush() ensures it.
+let freshStart = false;
+
 const provider = new WebxdcProvider({
   webxdc,
   ydoc,
@@ -39,10 +44,14 @@ const provider = new WebxdcProvider({
   getEditInfo: () => {
     const me = webxdc.selfName || webxdc.selfAddr || "someone";
     const count = yItems.size;
+    // Per-device opt-out of the chat info message (settings toggle).
+    const notify = localStorage.getItem("grocery.notify") !== "0";
+    const info = t(freshStart ? "info_started" : "info_updated", resolveLang());
     return {
       document: "Grocery Board",
       summary: `${count} item${count === 1 ? "" : "s"} · last edit by ${me}`,
-      startinfo: `${me} started a shared grocery list`,
+      // undefined → y-webxdc sends no info line, so the chat stays quiet.
+      startinfo: notify ? info.replace("{name}", me) : undefined,
     };
   },
   resendAllUpdates: false,
@@ -208,6 +217,8 @@ export function addItem(rawName: string): void {
     }
     return;
   }
+  // ponytail: a peer re-adding to a fully-emptied list also reads "started"; acceptable edge.
+  if (yItems.size === 0) freshStart = true;
   const category = categorize(name, yOverrides, resolveLang());
   ydoc.transact(() => {
     const m = new Y.Map<unknown>();

@@ -4,6 +4,19 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-06-28
+
+### Added
+
+- Settings toggle "Notify chat on changes" (per device) to silence the webxdc
+  info message posted into the chat on edits.
+
+### Changed
+
+- The chat info line now reads "… updated the grocery list" for an existing
+  list, reserving "… started a shared grocery list" for a genuine first
+  creation. The text is localized (en/de).
+
 ## [0.2.0] - 2026-06-27
 
 ### Fixed

@@ -128,6 +128,9 @@ export function App() {
   );
   const showWho = showWhoPref === "1";
   const setShowWho = (v: boolean) => setShowWhoPref(v ? "1" : "0");
+  const [notifyPref, setNotifyPref] = usePref<"1" | "0">("grocery.notify", "1");
+  const notify = notifyPref === "1";
+  const setNotify = (v: boolean) => setNotifyPref(v ? "1" : "0");
   const [langPref, setLangPrefState] = useState<LangPref>(getLangPref());
   const [overlay, setOverlay] = useState<OverlayState>(null);
 
@@ -175,6 +178,8 @@ export function App() {
               setCompletedMode={setCompletedMode}
               showWho={showWho}
               setShowWho={setShowWho}
+              notify={notify}
+              setNotify={setNotify}
               langPref={langPref}
               setLangPref={changeLang}
               onClose={close}

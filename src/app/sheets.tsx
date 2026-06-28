@@ -274,6 +274,8 @@ export function SettingsSheet(props: {
   setCompletedMode: (m: CompletedMode) => void;
   showWho: boolean;
   setShowWho: (v: boolean) => void;
+  notify: boolean;
+  setNotify: (v: boolean) => void;
   langPref: LangPref;
   setLangPref: (p: LangPref) => void;
   onClose: () => void;
@@ -303,6 +305,11 @@ export function SettingsSheet(props: {
             label={t("settings_show_who")}
             on={props.showWho}
             onToggle={() => props.setShowWho(!props.showWho)}
+          />
+          <SwitchRow
+            label={t("settings_notify")}
+            on={props.notify}
+            onToggle={() => props.setNotify(!props.notify)}
           />
         </SettingsGroup>
 
