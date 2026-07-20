@@ -4,6 +4,27 @@ All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-07-20
+
+### Fixed
+
+- Android: the add-field autocomplete rendered as a near-full-screen native
+  popup covering the on-screen keyboard and the input, making typing
+  impossible. The native `<datalist>` (broken in Android WebView) is replaced
+  by an in-page suggestion list that opens upward from the add bar, filters as
+  you type, and is capped at 6 entries.
+- Suggestion taps are handled on pointerup (the Delta Chat WebView blurs the
+  input before click, so clicks never landed), guarded so a drag ending on the
+  list can't add anything.
+
+### Changed
+
+- Tapping a suggestion now adds the item directly and keeps the keyboard open,
+  instead of only filling the input.
+- CI installs with `npm ci` against the committed lockfile (previously
+  `pnpm i` resolved fresh, breaking versions) and posts a preview `.xdc`
+  download link as a sticky comment on pull requests.
+
 ## [0.3.0] - 2026-06-28
 
 ### Added
