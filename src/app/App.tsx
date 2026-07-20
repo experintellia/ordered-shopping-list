@@ -103,22 +103,31 @@ function AddBar() {
     >
       {focused && suggestions.length > 0 && (
         <div className="suggestions" role="listbox">
-          {suggestions.map((n) => (
-            <button
-              key={n}
-              type="button"
-              role="option"
-              aria-selected={false}
-              // keep the input focused; blur would close the list before click
-              onPointerDown={(e) => e.preventDefault()}
-              onClick={() => {
-                addItem(n);
-                setValue("");
-              }}
-            >
-              {n}
-            </button>
-          ))}
+          {suggestions.map((n) => {
+            const pick = () => {
+              addItem(n);
+              setValue("");
+            };
+            return (
+              <button
+                key={n}
+                type="button"
+                role="option"
+                aria-selected={false}
+                // keep the input focused; blur would close the list
+                onPointerDown={(e) => e.preventDefault()}
+                // add on pointerup: in the Delta Chat WebView blur fires
+                // before click and unmounts the button, so click never lands.
+                // A scroll gesture pointercancels first, so this stays safe.
+                onPointerUp={pick}
+                // keyboard activation only (detail 0); pointer taps are
+                // handled above and a real click here would double-add
+                onClick={(e) => e.detail === 0 && pick()}
+              >
+                {n}
+              </button>
+            );
+          })}
         </div>
       )}
       <input
