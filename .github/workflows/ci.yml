@@ -20,10 +20,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: npm install -g pnpm
-      - run: pnpm i
-      - run: pnpm check
-      - run: pnpm build
+      # npm ci with the committed package-lock.json — pnpm ignored it and
+      # resolved fresh (breaking) dependency versions on every run
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
 
       - name: Release
         uses: softprops/action-gh-release@v2
