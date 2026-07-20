@@ -407,6 +407,7 @@ main.content {
 
 /* ---- add bar ---- */
 form.addbar {
+  position: relative;
   flex: 0 0 auto;
   /* Match the header: centered list-width footer, stable across modes. */
   width: 100%;
@@ -444,6 +445,30 @@ form.addbar button {
 }
 form.addbar button:active {
   opacity: 0.7;
+}
+/* Suggestion list opens upward from the add bar so it never sits over the
+   on-screen keyboard (in-page replacement for the native datalist popup). */
+form.addbar .suggestions {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  max-height: 40vh;
+  overflow-y: auto;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+form.addbar .suggestions button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 400;
+  padding: 12px 16px;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
 }
 
 /* ---- overlays / bottom sheet ---- */

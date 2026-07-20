@@ -93,14 +93,19 @@ describe("React app", () => {
     expect(document.querySelector(".row .who")).not.toBeNull();
   });
 
-  it("autocomplete datalist lists checked item names (feature E)", () => {
+  it("focused add field suggests checked item names, tap re-adds (feature E)", () => {
     render(<App />);
     add("Milk");
     tap(document.querySelector(".row")!); // check it
-    const opts = [...document.querySelectorAll("#add-suggestions option")].map(
-      (o) => o.getAttribute("value"),
-    );
-    expect(opts).toContain("Milk");
+    const input = screen.getByPlaceholderText(
+      "Add an item…",
+    ) as HTMLInputElement;
+    fireEvent.focus(input);
+    const suggestion = screen.getByRole("option", { name: "Milk" });
+    fireEvent.click(suggestion);
+    expect(document.querySelector(".suggestions")).toBeNull(); // consumed
+    expect(document.querySelector(".row")!.className).not.toContain("checked");
+    expect(input.value).toBe("");
   });
 
   it("completed visibility modes from Settings (feature B)", () => {
