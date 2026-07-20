@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write # create releases / upload .xdc on tags
+  pull-requests: write # sticky preview-build comment on PRs
 
 jobs:
   build:
@@ -25,6 +26,25 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
+
+      - name: Upload preview .xdc artifact
+        if: github.event_name == 'pull_request'
+        id: upload_xdc
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-xdc
+          path: dist-xdc/app.xdc
+          retention-days: 30
+
+      - name: Post sticky PR comment with preview link
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: xdc-preview
+          message: |
+            ## 📦 Preview build ready
+
+            [Download app.xdc](${{ steps.upload_xdc.outputs.artifact-url }}) and drop it into a Delta Chat chat to test this PR.
 
       - name: Release
         uses: softprops/action-gh-release@v2
