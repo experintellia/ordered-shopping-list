@@ -487,12 +487,16 @@ test("add field autocompletes from checked items (feature E)", async ({
   await addItem(page, "Oat Milk");
   await row(page, "Oat Milk").click(); // check it → becomes a suggestion
 
-  // the datalist backing the add input contains the checked item's name
-  await expect(
-    page.locator('datalist#add-suggestions option[value="Oat Milk"]'),
-  ).toHaveCount(1);
-  await expect(page.getByPlaceholder("Add an item…")).toHaveAttribute(
-    "list",
-    "add-suggestions",
-  );
+  const input = page.getByPlaceholder("Add an item…");
+  await input.click();
+  await input.fill("oa");
+  const suggestion = page.locator(".suggestions button", {
+    hasText: "Oat Milk",
+  });
+  await expect(suggestion).toBeVisible();
+  await suggestion.click();
+
+  // tapping the suggestion re-adds the item and clears the input
+  await expect(row(page, "Oat Milk")).toBeVisible();
+  await expect(input).toHaveValue("");
 });

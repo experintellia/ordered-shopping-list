@@ -84,7 +84,13 @@ function AddBar() {
   const { t } = useUI();
   useStore();
   const [value, setValue] = useState("");
-  const suggestions = checkedItemNames();
+  const [focused, setFocused] = useState(false);
+  // Custom in-page suggestion list instead of <datalist>: the native popup is
+  // broken in Android WebView and covers the on-screen keyboard.
+  const query = value.trim().toLowerCase();
+  const suggestions = checkedItemNames()
+    .filter((n) => n.toLowerCase().includes(query) && n.toLowerCase() !== query)
+    .slice(0, 6);
   return (
     <form
       className="addbar"
@@ -95,8 +101,27 @@ function AddBar() {
         (e.currentTarget.querySelector("input") as HTMLInputElement)?.focus();
       }}
     >
+      {focused && suggestions.length > 0 && (
+        <div className="suggestions" role="listbox">
+          {suggestions.map((n) => (
+            <button
+              key={n}
+              type="button"
+              role="option"
+              aria-selected={false}
+              // keep the input focused; blur would close the list before click
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => {
+                addItem(n);
+                setValue("");
+              }}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      )}
       <input
-        list="add-suggestions"
         type="text"
         autoComplete="off"
         autoCapitalize="words"
@@ -104,12 +129,9 @@ function AddBar() {
         placeholder={t("add_placeholder")}
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
       />
-      <datalist id="add-suggestions">
-        {suggestions.map((n) => (
-          <option key={n} value={n} />
-        ))}
-      </datalist>
       <button type="submit">{t("add_button")}</button>
     </form>
   );
