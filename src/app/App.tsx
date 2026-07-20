@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   LangPref,
   getLangPref,
@@ -85,6 +85,11 @@ function AddBar() {
   useStore();
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  // which suggestion the current pointer went down on — a pointerup only picks
+  // if the press started on the same button and never left it, so a drag that
+  // merely ends on the list can't add anything
+  const armed = useRef<string | null>(null);
   // Custom in-page suggestion list instead of <datalist>: the native popup is
   // broken in Android WebView and covers the on-screen keyboard.
   const query = value.trim().toLowerCase();
@@ -98,7 +103,7 @@ function AddBar() {
         e.preventDefault();
         addItem(value);
         setValue("");
-        (e.currentTarget.querySelector("input") as HTMLInputElement)?.focus();
+        inputRef.current?.focus();
       }}
     >
       {focused && suggestions.length > 0 && (
@@ -107,6 +112,9 @@ function AddBar() {
             const pick = () => {
               addItem(n);
               setValue("");
+              // the WebView blurs the input on tap despite the preventDefault;
+              // refocus so consecutive picks keep the list and keyboard open
+              inputRef.current?.focus();
             };
             return (
               <button
@@ -115,11 +123,19 @@ function AddBar() {
                 role="option"
                 aria-selected={false}
                 // keep the input focused; blur would close the list
-                onPointerDown={(e) => e.preventDefault()}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  armed.current = n;
+                }}
+                onPointerLeave={() => (armed.current = null)}
+                onPointerCancel={() => (armed.current = null)}
                 // add on pointerup: in the Delta Chat WebView blur fires
                 // before click and unmounts the button, so click never lands.
                 // A scroll gesture pointercancels first, so this stays safe.
-                onPointerUp={pick}
+                onPointerUp={() => {
+                  if (armed.current === n) pick();
+                  armed.current = null;
+                }}
                 // keyboard activation only (detail 0); pointer taps are
                 // handled above and a real click here would double-add
                 onClick={(e) => e.detail === 0 && pick()}
@@ -131,6 +147,7 @@ function AddBar() {
         </div>
       )}
       <input
+        ref={inputRef}
         type="text"
         autoComplete="off"
         autoCapitalize="words"
