@@ -408,6 +408,7 @@ main.content {
 /* ---- add bar ---- */
 form.addbar {
   position: relative;
+  z-index: 2; /* above the z-index:1 rows so the suggestion list covers them */
   flex: 0 0 auto;
   /* Match the header: centered list-width footer, stable across modes. */
   width: 100%;
